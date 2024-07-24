@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "endstone-essentials-geoip"
 version = "0.0.1"
-dependencies = ["geoip2"]
+dependencies = ["geoip2", "requests"]
 authors = [
     { name = "Vincent Wu", email = "magicdroidx@gmail.com" },
 ]
