@@ -3,19 +3,22 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "endstone-example"
-version = "0.4.0"
-dependencies = []
+name = "endstone-essentials-geoip"
+version = "0.0.1"
+dependencies = ["geoip2"]
 authors = [
-    { name = "Endstone Developers", email = "hello@endstone.dev" },
+    { name = "Vincent Wu", email = "magicdroidx@gmail.com" },
 ]
-description = "Python example plugin for Endstone servers"
+description = "Shows the country or city of a user on login"
 readme = "README.md"
 license = { file = "LICENSE" }
-keywords = ["endstone", "plugin"]
+keywords = ["endstone", "plugin", "essentials"]
 
 [project.urls]
-Homepage = "https://github.com/EndstoneMC/python-example-plugin"
+Homepage = "https://github.com/endstone-essentials/geoip"
 
 [project.entry-points."endstone"]
-example = "endstone_example:ExamplePlugin"
+essentials-geoip = "endstone_essentials.geoip:EssentialsGeoIP"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/endstone_essentials"]
