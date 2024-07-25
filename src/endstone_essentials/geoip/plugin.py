@@ -1,4 +1,5 @@
 import gzip
+import ipaddress
 import os
 import shutil
 import tarfile
@@ -6,10 +7,11 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
+import geoip2.database
+import geoip2.errors
 import requests
+from endstone.event import event_handler, PlayerLoginEvent
 from endstone.plugin import Plugin
-
-from endstone_essentials.geoip.listener import EssentialsGeoIPPlayerListener
 
 
 class EssentialsGeoIP(Plugin):
@@ -19,16 +21,33 @@ class EssentialsGeoIP(Plugin):
     def __init__(self):
         super().__init__()
         self.database_file: Path | None = None
+        self.database_reader: geoip2.database.Reader | None = None
 
     def on_enable(self) -> None:
         self.save_default_config()
 
-        listener = EssentialsGeoIPPlayerListener()
-        self.register_events(listener)
+        self.register_events(self)
         self.logger.info(
             "This product includes GeoLite2 data created by MaxMind, " "available from https://www.maxmind.com/."
         )
         self.load_database()
+
+    @event_handler
+    def on_player_login(self, event: PlayerLoginEvent):
+        address = event.player.address.hostname
+        try:
+            database_cfg = self.config.get("database", {})
+            if database_cfg.get("show-cities", False):
+                response = self.database_reader.city(event.player.address.hostname)
+                self.logger.info(f"Player {event.player.name} comes from {response.city.name}, {response.country.name}")
+            else:
+                response = self.database_reader.country(event.player.address.hostname)
+                self.logger.info(f"Player {event.player.name} comes from {response.country.name}")
+        except geoip2.errors.AddressNotFoundError as e:
+            if ipaddress.ip_address(address).is_private:
+                self.logger.info(f"Player {event.player.name} comes from unknown country")
+            else:
+                self.logger.error(str(e))
 
     def load_database(self):
         """
@@ -55,6 +74,8 @@ class EssentialsGeoIP(Plugin):
                 curr_time = datetime.now()
                 if (curr_time - mod_time).days > update_cfg.get("by-every-x-days", 30):
                     self.download_database()
+
+        self.database_reader = geoip2.database.Reader(self.database_file)
 
     def download_database(self):
         """
@@ -98,10 +119,15 @@ class EssentialsGeoIP(Plugin):
                 os.unlink(tf.name)
                 return
 
-        if url.endswith(".tar.gz"):
-            with tarfile.open(tf.name, "rb") as tar:
-                tar.extract(tar.getmembers()[0], self.database_file)
-        elif url.endswith(".gz"):
+        if "tar.gz" in url:
+            with tarfile.open(tf.name, "r:gz") as tar:
+                for member in tar.getmembers():
+                    if member.name.endswith(".mmdb"):
+                        with tar.extractfile(member) as f_in:
+                            with self.database_file.open("wb") as f_out:
+                                shutil.copyfileobj(f_in, f_out)
+                            break
+        elif "gz" in url:
             with gzip.open(tf.name, "rb") as f_in:
                 with self.database_file.open("wb") as f_out:
                     shutil.copyfileobj(f_in, f_out)
