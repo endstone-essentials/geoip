@@ -34,6 +34,10 @@ class EssentialsGeoIP(Plugin):
 
     @event_handler
     def on_player_login(self, event: PlayerLoginEvent):
+        if self.database_reader is None:
+            self.logger.warning("GeoIP database is not available.")
+            return
+
         address = event.player.address.hostname
         try:
             database_cfg = self.config.get("database", {})
@@ -75,7 +79,8 @@ class EssentialsGeoIP(Plugin):
                 if (curr_time - mod_time).days > update_cfg.get("by-every-x-days", 30):
                     self.download_database()
 
-        self.database_reader = geoip2.database.Reader(self.database_file)
+        if self.database_file.exists():
+            self.database_reader = geoip2.database.Reader(self.database_file)
 
     def download_database(self):
         """

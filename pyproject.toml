@@ -18,7 +18,4 @@ keywords = ["endstone", "plugin", "essentials"]
 Homepage = "https://github.com/endstone-essentials/geoip"
 
 [project.entry-points."endstone"]
-essentials-geoip = "endstone_essentials.geoip:EssentialsGeoIP"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/endstone_essentials"]
+essentials-geoip = "endstone_essentials_geoip:EssentialsGeoIP"
