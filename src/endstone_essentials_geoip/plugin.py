@@ -16,7 +16,7 @@ from endstone.plugin import Plugin
 
 class EssentialsGeoIP(Plugin):
     prefix = "EssentialsGeoIP"
-    api_version = "0.4"
+    api_version = "0.5"
 
     def __init__(self):
         super().__init__()
